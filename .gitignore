@@ -1,0 +1,4 @@
+# 本地/私有文件,不随仓库公开
+backup-state-*.json
+publish.bat
+catalog-entry.yml

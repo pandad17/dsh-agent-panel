@@ -1,0 +1,30 @@
+{
+  "name": "dsh-agent-panel",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness 子智能体常驻面板:拖拽排序、两级分组、改名与费用参考",
+  "license": "MIT",
+  "keywords": ["dsh-plugin", "deepseek-harness", "subagent", "panel"],
+  "type": "module",
+  "engines": {
+    "dsh": ">=0.2.2-rc.3 <0.3.0"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./icon": "./icon.svg"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "icon.svg", "README.md", "LICENSE"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  }
+}
