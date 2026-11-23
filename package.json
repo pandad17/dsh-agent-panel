@@ -4,6 +4,10 @@
   "description": "DeepSeek Harness 子智能体常驻面板:拖拽排序、两级分组、改名与费用参考",
   "license": "MIT",
   "keywords": ["dsh-plugin", "deepseek-harness", "subagent", "panel"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pandad17/dsh-agent-panel.git"
+  },
   "type": "module",
   "engines": {
     "dsh": ">=0.2.2-rc.3 <0.3.0"
