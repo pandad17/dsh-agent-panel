@@ -285,7 +285,7 @@ window.__ModuleLoader__.load({
       '.uit-createform{padding:4px 2px 8px}',
       // 分组
       '.uit-group-row{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);min-height:38px}',
-      '.uit-group-name{font-size:13.5px;font-weight:600;line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.uit-group-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.uit-group-count{flex:none;font-size:11px;color:var(--dsw-alias-label-tertiary)}',
       '.uit-group-children{margin-left:18px;border-left:1px solid var(--dsw-alias-border-l1);padding-left:2px;display:flex;flex-direction:column}',
       // 拖拽提示
@@ -844,8 +844,10 @@ window.__ModuleLoader__.load({
         const target = { kind: 'group', id: section.id, groupId: null };
         let groupYuan = 0;
         let groupHasCost = false;
+        let runningInGroup = 0;
         for (const cid of section.children) {
           const cs = summaries[cid];
+          if (cs && cs.running === true) runningInGroup += 1;
           const c = shownCostOf(cs);
           if (c != null) {
             groupYuan += c;
@@ -911,6 +913,16 @@ window.__ModuleLoader__.load({
                 )
               : h('span', { className: 'uit-group-name' }, section.name),
             h('span', { className: 'uit-group-count' }, section.children.length + ' 个'),
+            runningInGroup > 0
+              ? h(
+                  'span',
+                  {
+                    className: 'uit-badge',
+                    title: '该分组内有 ' + runningInGroup + ' 个正在运行',
+                  },
+                  runningInGroup + ' 项运行中',
+                )
+              : null,
             groupHasCost
               ? h('span', { className: 'uit-cost', title: '分组参考费用(均价 \u00D7 tokens)' }, formatCost(groupYuan))
               : null,
