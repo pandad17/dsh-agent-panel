@@ -11,7 +11,8 @@
  *    - 改名会同步到右侧栏子智能体对话标签页的标题 chip(实时)
  *    - 改名/排序/分组通过 /ui-tweaks 持久化到 storageDomain,重启不丢
  * 2) 费用参考:每行/分组合计/面板合计/主会话顶部栏,单价可自定义(默认 4 元/百万)
- * 3) 注入 CSS:加大 header 子智能体下拉树的点击区与字号;修复右侧栏小字与模糊
+ * 3) 文件跳转:右侧栏第 1 个分栏里点击文件,直接在第 2 个分栏打开(最多 2 个分栏)
+ * 4) 注入 CSS:加大 header 子智能体下拉树的点击区与字号;修复右侧栏小字与模糊
  *
  * 注意:GLOBAL_CSS 中的 rezYhW_* / p2k40q_* 是当前 DSH 版本(0.2.2-rc.3)编译产物的
  * CSS Modules 哈希类名。DSH 升级后若失效,重新生成方法:
@@ -174,6 +175,57 @@ window.__ModuleLoader__.load({
       } catch (e) {
         return m[1];
       }
+    }
+
+    // ---- 文件跳转:第 1 个侧边栏分栏点击文件 → 直接在第 2 个分栏打开 ----
+    function isFileAddress(address) {
+      return typeof address === 'string' && address.indexOf('dsh-resource://file') === 0;
+    }
+
+    // 读取侧边栏当前 docked 分栏的 pane id(按 DOM 列顺序)
+    function sidebarPaneIds() {
+      const panel = document.querySelector('[data-sidebar-right-open], [data-sidebar-right-panel]');
+      if (!panel) return [];
+      const ids = [];
+      for (const el of panel.querySelectorAll('[data-dockkit-pane]')) {
+        const id = el.dataset && el.dataset.dockkitPane;
+        if (id && ids.indexOf(id) === -1) ids.push(id);
+      }
+      return ids;
+    }
+
+    function installFilePaneRedirect(scope) {
+      const svc = scope.sidebarRight;
+      if (!svc || svc.__agentPanelFileRedirect) return () => {};
+      const original = svc.openResourceIn;
+      if (typeof original !== 'function') return () => {};
+      svc.__agentPanelFileRedirect = true;
+      svc.openResourceIn = function (sessionId, address, options) {
+        options = options || {};
+        if (
+          isFileAddress(address) &&
+          options.paneId !== undefined &&
+          options.preferNewPane !== true &&
+          options.replaceTab === undefined
+        ) {
+          const paneIds = sidebarPaneIds();
+          if (paneIds.indexOf(options.paneId) === 0) {
+            // 点击发生在第 1 个分栏:已有第 2 个分栏就跳过去;只有一个分栏则新分一个
+            if (paneIds.length >= 2) {
+              options = Object.assign({}, options, { paneId: paneIds[1] });
+            } else {
+              options = Object.assign({}, options, { paneId: undefined, preferNewPane: true });
+            }
+          }
+        }
+        return original.call(svc, sessionId, address, options);
+      };
+      return () => {
+        if (svc.__agentPanelFileRedirect) {
+          svc.__agentPanelFileRedirect = false;
+          svc.openResourceIn = original;
+        }
+      };
     }
 
     const GLOBAL_CSS = [
@@ -1088,6 +1140,9 @@ window.__ModuleLoader__.load({
 
         // 右侧栏「智能体」标签页:类型注册 + 面板主体 + 指南页入口
         ctx.inject(['sidebarRightTabs', 'sidebarRight'], (scope) => {
+          // 文件跳转:第 1 个分栏点文件 → 第 2 个分栏打开(侧边栏最多 2 个分栏,官方已限)
+          scope.effect(() => installFilePaneRedirect(scope), 'ui-tweaks: file pane redirect');
+
           scope.effect(() => scope.sidebarRightTabs.register({
             id: TAB_ID,
             kind: TAB_KIND,
